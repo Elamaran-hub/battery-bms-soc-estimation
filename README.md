@@ -53,4 +53,44 @@ Outputs:
 - `Temp_est`
 - `SOC_est` (initial estimate from microcontroller logic)
 
+These are logged using **To Workspace** blocks as time series:
+- `V_est_ts`
+- `I_est_ts`
+
+---
+
+## **4️⃣ Kalman SOC Estimation Block**
+A MATLAB Function block implementing:
+- Prediction step (`SOC_pred = SOC_prev - I * dt / Capacity`)
+- Correction step using measured voltage  
+- Kalman gain update  
+- Error minimization  
+
+Outputs:
+- `SOC_est` → final Kalman-filtered SOC
+
+Logged as:
+- `SOC_est`
+- `SOC_true` (reference)
+
+---
+
+## 📊 **Post-Processing & Plots**
+
+After simulation, run in MATLAB:
+
+```matlab
+figure;
+plot(SOC_true.Time, SOC_true.Data, 'LineWidth',1.5); hold on;
+plot(SOC_est.Time, SOC_est.Data, '--', 'LineWidth',1.5);
+xlabel('Time (s)');
+ylabel('SOC (0–1)');
+legend('SOC true','SOC estimated');
+title('SOC: True vs Estimated');
+grid on;
+
+- `I_est`
+- `Temp_est`
+- `SOC_est` (initial estimate from microcontroller logic)
+
 These are logged using **To Workspace** blocks as ti
