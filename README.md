@@ -94,3 +94,11 @@ grid on;
 - `SOC_est` (initial estimate from microcontroller logic)
 
 These are logged using **To Workspace** blocks as ti
+## 🔥 Features
+- True battery voltage & SOC model
+- Sensor modelling (LV25-P, LA-200)
+- ESP32-like signal conditioning
+- Kalman Filter SOC estimation
+- Timeseries logging & MATLAB plotting
+- Fully modular architecture
+
