@@ -1,104 +1,65 @@
-# battery-bms-soc-estimation
-# 🔋 Battery Management System (BMS) – Simulink Model  
-### SOC Estimation using Kalman Filter | Sensor Modeling | ESP32 Logic Integration
+🔋 Battery Management System (BMS) — Simulink Model
 
-This project implements a simplified Battery Management System (BMS) in **MATLAB Simulink**, focusing on:
+End-to-end BMS simulation pipeline: from voltage/current sensing → signal conditioning → microcontroller logic → Kalman Filter SOC estimation
 
-- True Battery Model  
-- Sensor Measurement System (LEM LV25-P, LA-200, Temperature Sensor)  
-- ESP32 Processing Logic  
-- Kalman Filter–based State of Charge (SOC) Estimation  
-- Data logging for post-processing and plotting  
+Show Image
+Show Image
+Show Image
+Show Image
 
-The goal is to simulate a real-world BMS pipeline end-to-end, from **voltage/current sensing → signal conditioning → microcontroller logic → SOC estimation**.
+📌 Overview
+This project implements a fully modular Battery Management System (BMS) in MATLAB Simulink, simulating a real-world pipeline from raw battery signals to accurate State of Charge (SOC) estimation using a Kalman Filter.
+The system models the complete signal chain:
+Battery True Model → LEM Sensor Layer → ESP32 Signal Conditioning → Kalman SOC Estimator → Output / Logging
+Why this matters: Accurate SOC estimation is critical in EVs and energy storage systems. This model demonstrates how sensor noise, scaling errors, and current integration drift are handled in a real BMS pipeline — all verified in simulation before hardware deployment.
 
----
+🚀 Project Architecture
+1️⃣ Battery True Model (Battery_True_Model)
+Simulates the physical behaviour of a lithium-ion battery cell.
+Output SignalDescriptionV_batt_trueActual battery terminal voltageI_battLoad current drawnSOC_trueGround-truth State of Charge (reference)
 
-## 🚀 Project Architecture
+Models internal resistance and open-circuit voltage (OCV) vs SOC relationship
+Driven by a step load profile I_load_A
 
-### **1️⃣ Battery True Model**
-- Generates:
-  - `V_batt_true` (Actual battery terminal voltage)
-  - `I_batt` (Load current)
-  - `SOC_true` (True State of Charge)
-- Represents the physical battery behaviour.
 
-### **2️⃣ Sensors Layer (LEM Sensors Block)**
-Simulated measurement devices:
-- **LV25-P Voltage Transducer (Scaled Output)**
-- **LA-200 Current Sensor (Current → Voltage mapping)**
-- **Temperature Sensor**
-  
-Outputs:
-- `V_meas_LV25`
-- `V_meas_LA200`
-- `V_meas_temp`
+2️⃣ Sensors Layer — Sensors_LEM
+Simulates real LEM sensor hardware with realistic scaling and noise behaviour.
+SensorModelOutput SignalVoltage TransducerLEM LV25-PV_meas_LV25Current SensorLEM LA-200V_meas_LA200Temperature SensorNTC ThermistorV_meas_temp
 
-These outputs include scaling effects similar to real hardware behaviour.
+Outputs include realistic scaling effects mirroring actual hardware behaviour — not ideal measurements.
 
----
 
-## **3️⃣ ESP32 Logic Block**
-This block represents the signal conditioning normally done in a microcontroller.
-
+3️⃣ ESP32 Logic Block — ESP_Logic
+Represents the signal conditioning stage normally performed inside a microcontroller firmware.
 Tasks performed:
-- Convert sensor signals to engineering values  
-- Scale voltage and current  
-- Pass temperature values  
-- Prepare cleaned signals for Kalman filter  
 
-Outputs:
-- `V_est`
-- `I_est`
-- `Temp_est`
-- `SOC_est` (initial estimate from microcontroller logic)
+Convert sensor voltages back to engineering values (V, A, °C)
+Scale voltage and current to physical units
+Pass temperature readings downstream
+Prepare clean, conditioned signals for the Kalman estimator
 
-These are logged using **To Workspace** blocks as time series:
-- `V_est_ts`
-- `I_est_ts`
+OutputDescriptionV_estEstimated voltage (conditioned)I_estEstimated current (conditioned)Temp_estEstimated temperatureSOC_estInitial SOC estimate from MCU logic
+Logged as time series via To Workspace blocks: V_est_ts, I_est_ts
 
----
+4️⃣ Kalman SOC Estimation Block
+A MATLAB Function block implementing a discrete Kalman Filter for SOC tracking.
+Algorithm steps:
 
-## **4️⃣ Kalman SOC Estimation Block**
-A MATLAB Function block implementing:
-- Prediction step (`SOC_pred = SOC_prev - I * dt / Capacity`)
-- Correction step using measured voltage  
-- Kalman gain update  
-- Error minimization  
+Prediction: SOC_pred = SOC_prev - (I × dt) / Capacity
+Correction: Residual computed from measured vs predicted voltage
+Kalman Gain Update: Optimally weighs prediction vs measurement noise
+Error Minimization: Final corrected SOC output
 
-Outputs:
-- `SOC_est` → final Kalman-filtered SOC
+OutputDescriptionSOC_estFinal Kalman-filtered SOC valueSOC_trueReference ground truth (for comparison)
 
-Logged as:
-- `SOC_est`
-- `SOC_true` (reference)
-
----
-
-## 📊 **Post-Processing & Plots**
-
-After simulation, run in MATLAB:
-
-```matlab
-figure;
-plot(SOC_true.Time, SOC_true.Data, 'LineWidth',1.5); hold on;
-plot(SOC_est.Time, SOC_est.Data, '--', 'LineWidth',1.5);
+📊 Post-Processing & Plots
+After running the simulation, execute in MATLAB Command Window:
+matlabfigure;
+plot(SOC_true.Time, SOC_true.Data, 'LineWidth', 1.5); hold on;
+plot(SOC_est.Time,  SOC_est.Data,  '--', 'LineWidth', 1.5);
 xlabel('Time (s)');
 ylabel('SOC (0–1)');
-legend('SOC true','SOC estimated');
-title('SOC: True vs Estimated');
+legend('SOC True', 'SOC Estimated');
+title('SOC: True vs Estimated (Kalman Filter)');
 grid on;
-
-- `I_est`
-- `Temp_est`
-- `SOC_est` (initial estimate from microcontroller logic)
-
-These are logged using **To Workspace** blocks as ti
-## 🔥 Features
-- True battery voltage & SOC model
-- Sensor modelling (LV25-P, LA-200)
-- ESP32-like signal conditioning
-- Kalman Filter SOC estimation
-- Timeseries logging & MATLAB plotting
-- Fully modular architecture
-
+This plots the Kalman-estimated SOC vs ground truth — the closer the dashed line tracks the solid line, the better the filter performance.
